@@ -23,6 +23,22 @@ def Config(app_id, platform, arch, channel, request_os, request_arch):
     return config
 
 
+def name_from_config(version_str, config):
+    osarch = {
+        'Linux/x86_64': 'linux',
+        'Linux/x86': 'linux32',
+        'Windows/x86_64': 'win64',
+        'Windows/x86': 'win',
+        'Chrome OS/arm': 'chromeos_arm32',
+        'Chrome OS/arm64': 'chromeos_arm64',
+        'Chrome OS/x86_64': 'chromeos_intel64',
+    }[config.platform + '/' + config.arch]
+
+    return '{version_str}_{osarch}_PepperFlashPlayer.crx3'.format(
+        version_str=version_str,
+        osarch=osarch)
+
+
 def get_update_links(session, config):
     headers = {
         "X-Goog-Update-AppId": config.app_id,
@@ -71,9 +87,10 @@ def process(session, config):
                         'unknown status attribute value')
 
     manifest_node = updatecheck_node.xpath('//manifest')[0]
+    version_str = updatecheck_node.xpath('//manifest')[0].get('version')
     package_node = updatecheck_node.xpath('//manifest/packages/package')[0]
     name = package_node.get('name')
-    safe_name = name.replace('/', '_')
+    safe_name = name_from_config(version_str, config)
     hash_sha256 = package_node.get('hash_sha256')
     expected_size = int(package_node.get('size'))
 
